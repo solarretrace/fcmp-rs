@@ -27,6 +27,20 @@ use std::path::PathBuf;
 #[clap(name = "fcmp")]
 #[clap(author, version, about, long_about = None)]
 pub struct FcmpOptions {
+    /// File paths to compare.
     #[clap(parse(from_os_str))]
     pub paths: Vec<PathBuf>,
+
+    /// Reverse the compare.
+    #[clap(
+        short = 'r',
+        long = "reverse")]
+    pub reverse: bool,
+
+    /// Return the index of the relevant file, rather than the path.
+    #[clap(
+        short = 'i',
+        long = "index")]
+    pub index: bool,
+
 }

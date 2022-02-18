@@ -9,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // Internal library imports.
-use fcmp_cli::command::FcmpOptions;
+use fcmp::command::FcmpOptions;
 
 // External library imports.
 use anyhow::Context;
@@ -37,7 +37,11 @@ pub fn main() {
 /// The application facade for propagating user errors.
 pub fn main_facade() -> Result<(), Error> {
     // Parse command line options.
-    let FcmpOptions { paths } = FcmpOptions::try_parse()?;
+    let FcmpOptions {
+        paths,
+        reverse,
+        index,
+    } = FcmpOptions::try_parse()?;
 
 
     println!("{:?}", paths);

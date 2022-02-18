@@ -104,22 +104,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e25ea47919b1560c4e3b7fe0aaab9becf5b84a10325ddf7db0f0ba5e1026499"
 
 [[package]]
-name = "fcmp-cli"
+name = "fcmp"
 version = "0.0.1"
 dependencies = [
  "anyhow",
  "clap",
- "colored",
- "pretty_assertions",
- "test-log",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "fcmp-core"
-version = "0.0.1"
-dependencies = [
  "colored",
  "pretty_assertions",
  "test-log",
