@@ -1,0 +1,42 @@
+[package]
+name = "fcmp-core"
+version = "0.0.1"
+authors = ["Skylor R Schermer <skyschermer@gmail.com>"]
+edition = "2021"
+license = "MIT or Apache-2.0"
+repository = "https://github.com/solarretrace/fcmp-rs"
+homepage = "https://github.com/solarretrace/fcmp-rs"
+description = "File compare CLI utility"
+readme = "readme.md"
+keywords = ["file", "compare", "utility", "cli"]
+categories = []
+documentation = ""
+exclude = [
+	"*.sublime-project",
+	"*.sublime-workspace",
+	".trace"]
+
+[lib]
+name = "fcmp"
+
+[features]
+default = []
+trace = [
+	"tracing",
+]
+
+[dependencies]
+# Required dependencies
+tracing = { version = "0.1", optional = true }
+
+
+# Dependencies used for tests, examples, and benches.
+[dev-dependencies]
+pretty_assertions = "*"
+test-log = { version = "0.2", default_features = false, features = ["trace"] }
+tracing = { version = "0.1", default-features = false }
+tracing-subscriber = { version = "0.3", default_features = false, features = ["env-filter", "fmt"] }
+colored = { version = "2.0" }
+
+[badges]
+maintenance = { status = "experimental" }
