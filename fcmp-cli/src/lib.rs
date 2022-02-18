@@ -5,7 +5,7 @@
 // This code is dual licenced using the MIT or Apache 2 license.
 // See licence-mit.md and licence-apache.md for details.
 ////////////////////////////////////////////////////////////////////////////////
-//! Fcmp library modules.
+//! Fcmp CLI library modules.
 ////////////////////////////////////////////////////////////////////////////////
 #![warn(anonymous_parameters)]
 #![warn(bad_style)]
@@ -42,5 +42,8 @@
 // Internal modules.
 // #[cfg(test)]
 // mod test;
+
+// Public modules.
+pub mod command;
 
 

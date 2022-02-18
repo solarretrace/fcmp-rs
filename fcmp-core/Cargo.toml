@@ -14,20 +14,16 @@ documentation = ""
 exclude = [
 	"*.sublime-project",
 	"*.sublime-workspace",
-	".trace"]
+]
 
 [lib]
 name = "fcmp"
 
 [features]
 default = []
-trace = [
-	"tracing",
-]
 
 [dependencies]
 # Required dependencies
-tracing = { version = "0.1", optional = true }
 
 
 # Dependencies used for tests, examples, and benches.
