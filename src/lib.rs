@@ -40,10 +40,14 @@
 #![warn(while_true)]
 
 // Internal modules.
+mod compare;
 // #[cfg(test)]
 // mod test;
 
 // Public modules.
 pub mod command;
+
+// Exports.
+pub use compare::*;
 
 

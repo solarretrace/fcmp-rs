@@ -37,14 +37,9 @@ pub fn main() {
 /// The application facade for propagating user errors.
 pub fn main_facade() -> Result<(), Error> {
     // Parse command line options.
-    let FcmpOptions {
-        paths,
-        reverse,
-        index,
-    } = FcmpOptions::try_parse()?;
+    let opts = FcmpOptions::try_parse()?;
 
-
-    println!("{:?}", paths);
+    println!("{:?}", opts);
     Ok(())
 }
 
