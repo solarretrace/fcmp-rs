@@ -5,11 +5,11 @@
 // This code is dual licenced using the MIT or Apache 2 license.
 // See licence-mit.md and licence-apache.md for details.
 ////////////////////////////////////////////////////////////////////////////////
-//! Command line interface flags.
+//! Command line interface options.
 ////////////////////////////////////////////////////////////////////////////////
 
 // Internal library imports.
-use crate::MissingBehavior;
+use crate::MissingFileBehavior;
 
 // External library imports.
 use clap::Parser;
@@ -46,7 +46,7 @@ pub struct FcmpOptions {
         long = "index")]
     pub index: bool,
 
-    /// Ignore files that have the same content.
+    /// Consider files with the same content as equal.
     #[clap(
         short = 'd',
         long = "diff")]
@@ -60,7 +60,7 @@ pub struct FcmpOptions {
         long = "missing",
         default_value = "oldest",
         arg_enum)]
-    pub missing: MissingBehavior,
+    pub missing: MissingFileBehavior,
 }
 
 

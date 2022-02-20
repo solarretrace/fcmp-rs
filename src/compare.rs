@@ -8,10 +8,8 @@
 //! File compare functions.
 ////////////////////////////////////////////////////////////////////////////////
 
-
 // External library imports.
 use anyhow::anyhow;
-use clap::Parser;
 
 // Standard library imports.
 use std::cmp::Ordering;
@@ -19,10 +17,8 @@ use std::fs::File;
 use std::fs::Metadata;
 use std::io::BufRead as _;
 use std::io::BufReader;
-use std::io::Error;
 use std::io::ErrorKind;
 use std::path::Path;
-use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::SystemTime;
 
@@ -30,6 +26,10 @@ use std::time::SystemTime;
 ////////////////////////////////////////////////////////////////////////////////
 // FileCmp
 ////////////////////////////////////////////////////////////////////////////////
+/// A [`File`] wrapper which provides methods for doing file comparisons.
+/// operations.
+///
+/// [`File`]: std::fs::File
 #[derive(Debug)]
 pub struct FileCmp {
     file: Option<File>,
@@ -77,12 +77,23 @@ impl FileCmp {
         self.file.is_some()
     }
 
+    /// Returns the modification time of the wrapped file, if it can be
+    /// determined. This is equivalent to a call to [`Metadata::modified`].
+    ///
+    /// [`Metadata::modified`]: std::fs::Metadata::modified
     fn modified(&self) -> Option<SystemTime> {
         self.metadata
             .as_ref()
             .map(|m| m.modified().expect("get file modified time"))
     }
 
+    /// Returns an ordering between the given `FileCmp`s based on their
+    /// modification times, if such an ordering exists.
+    ///
+    /// ### Parameters
+    /// + `promote_newest`: If true, indicates that missing files should be
+    /// considered greater than other files. Otherwise, they are considered less
+    /// than other files.
     pub fn partial_cmp(&self, other: &Self, promote_newest: bool)
         -> Option<Ordering>
     {
@@ -100,9 +111,18 @@ impl FileCmp {
             _                    => return None,
         };
 
-        Some(file_cmp.then(self.modified().cmp(&other.modified())))
+        Some(file_cmp.then(time_cmp))
     }
 
+    /// Returns an ordering between the given `FileCmp`s based on their
+    /// modification times, if such an ordering exists. This method will first
+    /// determine if two files' content differs, and if not, they will be
+    /// treated as equal regardless of their modification times.
+    ///
+    /// ### Parameters
+    /// + `promote_newest`: If true, indicates that missing files should be
+    /// considered greater than other files. Otherwise, they are considered less
+    /// than other files.
     pub fn partial_cmp_diff(&self, other: &Self, promote_newest: bool)
         -> Option<Ordering>
     {
@@ -116,7 +136,7 @@ impl FileCmp {
             if len == meta_b.len()
                 && (!meta_a.is_symlink()
                     && meta_a.file_type() == meta_b.file_type())
-                && FileCmp::content_eq(file_a, file_b, len).ok()?
+                && FileCmp::content_eq(file_a, file_b).ok()?
             {
                 return Some(Ordering::Equal);
             }
@@ -125,7 +145,15 @@ impl FileCmp {
         self.partial_cmp(other, promote_newest)
     }
 
-    fn content_eq(a: &File, b: &File, len: u64) -> Result<bool, Error> {
+    /// Returns `true` if the given files have the same content.
+    ///
+    /// ### Errors
+    ///
+    /// Returns a [`std::io::Error`] if the file's contents fail to read
+    /// correctly.
+    ///
+    /// [`std::io::Error`]: std::io::Error
+    fn content_eq(a: &File, b: &File) -> Result<bool, std::io::Error> {
         let mut buf_reader_a = BufReader::new(a);
         let mut buf_reader_b = BufReader::new(b);
 
@@ -158,13 +186,13 @@ impl FileCmp {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// MissingBehavior
+// MissingFileBehavior
 ////////////////////////////////////////////////////////////////////////////////
 /// Options for handling missing files.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(clap::ArgEnum)]
-pub enum MissingBehavior {
+pub enum MissingFileBehavior {
     /// Treat missing files as older than all others.
     Oldest,
     /// Treat missing files as newer than all others.
@@ -175,52 +203,68 @@ pub enum MissingBehavior {
     Error,
 }
 
-impl FromStr for MissingBehavior {
-    type Err = MissingBehaviorParseError;
+impl FromStr for MissingFileBehavior {
+    type Err = MissingFileBehaviorParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.eq_ignore_ascii_case("oldest") {
-            Ok(MissingBehavior::Oldest)
+            Ok(MissingFileBehavior::Oldest)
         } else if s.eq_ignore_ascii_case("newest") {
-            Ok(MissingBehavior::Newest)
+            Ok(MissingFileBehavior::Newest)
         } else if s.eq_ignore_ascii_case("ignore") {
-            Ok(MissingBehavior::Ignore)
+            Ok(MissingFileBehavior::Ignore)
         } else if s.eq_ignore_ascii_case("error") {
-            Ok(MissingBehavior::Error)
+            Ok(MissingFileBehavior::Error)
         } else {
-            Err(MissingBehaviorParseError)
+            Err(MissingFileBehaviorParseError)
         }
     }
 }
 
+/// An error indicating a failure to parse a [`MissingFileBehavior`].
+///
+/// [`MissingFileBehavior`]: MissingFileBehavior 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MissingBehaviorParseError;
+pub struct MissingFileBehaviorParseError;
 
-impl std::error::Error for MissingBehaviorParseError {}
+impl std::error::Error for MissingFileBehaviorParseError {}
 
-impl std::fmt::Display for MissingBehaviorParseError {
+impl std::fmt::Display for MissingFileBehaviorParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "error parsing argument to option --missing")
+        write!(f, "failure to parse MissingFileBehavior")
     }
 }
-
-
-
 
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // compare_all
 ////////////////////////////////////////////////////////////////////////////////
+/// Takes an iterator of [`Path`]s and returns the index of the most recently
+/// modified file.
+/// 
+/// If the result would be ambiguous, the first occurring ambiguous item in the
+/// list will be returned.
+///
+///
+/// ### Parameters
+/// + `reverse`: Whether to reverse to comparison order and return the least
+/// recently modified file.
+/// + `diff`: Whether to consider files with equivalent content to be equal.
+/// + `missing`: The [`MissingFileBehavior`] indicating how to handle missing
+/// files.
+///    
+/// [`Path`]: std::path::Path
+/// [`MissingFileBehavior`]: MissingFileBehavior
 pub fn compare_all<'p, P>(
     paths: P,
     reverse: bool,
     diff: bool,
-    missing: MissingBehavior)
+    missing: MissingFileBehavior)
     -> Result<usize, anyhow::Error>
     where P: IntoIterator<Item=&'p Path>
 {
-    let promote_newest = matches!(missing, MissingBehavior::Newest);
+    let promote_newest = matches!(missing, MissingFileBehavior::Newest);
 
     let mut paths_iter = paths.into_iter().enumerate();
 
@@ -230,11 +274,11 @@ pub fn compare_all<'p, P>(
     while let Some((idx, p)) = paths_iter.next() {
         let curr = match FileCmp::try_from(p) {
             Ok(file_cmp) if !file_cmp.is_found() => match missing {
-                MissingBehavior::Error => return Err(
+                MissingFileBehavior::Error => return Err(
                     anyhow!("file '{}' not found", p.display())
                 ),
 
-                MissingBehavior::Ignore => continue,
+                MissingFileBehavior::Ignore => continue,
                 _ => Some(file_cmp),
             },
             Ok(file_cmp) => Some(file_cmp),

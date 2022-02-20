@@ -5,7 +5,8 @@
 ```
 Takes a list of file names and returns the most recently modified file.
 
-By default, the file name is returned, and missing files are ignored.
+If the result would be ambiguous, the first occurring ambiguous item in the file list will be
+returned.
 
 USAGE:
     fcmp [OPTIONS] [PATHS]...
@@ -16,7 +17,7 @@ ARGS:
 
 OPTIONS:
     -d, --diff
-            Ignore files that have the same content
+            Consider files with the same content as equal
 
     -h, --help
             Print help information
@@ -25,10 +26,12 @@ OPTIONS:
             Return the (0-based) index of the file instead of the path
 
     -m, --missing <MISSING>
-            Behavior when comparing missing files
+            Determines how to handle missing files.
 
-            [default: ignore]
-            [possible values: ignore, error]
+            By default, missing files will be treated as older than all other files.
+
+            [default: oldest]
+            [possible values: oldest, newest, ignore, error]
 
     -r, --reverse
             Return the oldest file instead of the newest
