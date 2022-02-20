@@ -41,8 +41,6 @@
 
 // Internal modules.
 mod compare;
-// #[cfg(test)]
-// mod test;
 
 // Public modules.
 pub mod command;
