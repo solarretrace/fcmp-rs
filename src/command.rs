@@ -8,13 +8,14 @@
 //! Command line interface flags.
 ////////////////////////////////////////////////////////////////////////////////
 
+// Internal library imports.
+use crate::MissingBehavior;
+
 // External library imports.
 use clap::Parser;
 
 // Standard library imports.
 use std::path::PathBuf;
-use std::str::FromStr;
-use std::error::Error;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +23,8 @@ use std::error::Error;
 ////////////////////////////////////////////////////////////////////////////////
 /// Takes a list of file names and returns the most recently modified file.
 /// 
-/// By default, the file name is returned, and missing files are ignored.
+/// If the result would be ambiguous, the first occurring ambiguous item in the
+/// file list will be returned.
 #[derive(Debug, Clone)]
 #[derive(Parser)]
 #[clap(name = "fcmp")]
@@ -50,50 +52,15 @@ pub struct FcmpOptions {
         long = "diff")]
     pub diff: bool,
 
-    /// Behavior when comparing missing files.
+    /// Determines how to handle missing files.
+    /// 
+    /// By default, missing files will be treated as older than all other files.
     #[clap(
         short = 'm',
         long = "missing",
-        default_value = "ignore",
+        default_value = "oldest",
         arg_enum)]
     pub missing: MissingBehavior,
-
-    // TODO: Directory comparisons?
 }
 
 
-
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(clap::ArgEnum)]
-pub enum MissingBehavior {
-    Ignore,
-    Error,
-}
-
-impl FromStr for MissingBehavior {
-    type Err = MissingBehaviorParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.eq_ignore_ascii_case("ignore") {
-            Ok(MissingBehavior::Ignore)
-        } else if s.eq_ignore_ascii_case("error") {
-            Ok(MissingBehavior::Error)
-        } else {
-            Err(MissingBehaviorParseError)
-        }
-    }
-}
-
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MissingBehaviorParseError;
-
-impl Error for MissingBehaviorParseError {}
-
-impl std::fmt::Display for MissingBehaviorParseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "error parsing argument to option --missing")
-    }
-}

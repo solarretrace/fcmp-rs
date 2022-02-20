@@ -1,6 +1,6 @@
 [package]
 name = "fcmp"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Skylor R Schermer <skyschermer@gmail.com>"]
 edition = "2021"
 license = "MIT or Apache-2.0"
@@ -27,16 +27,11 @@ default = []
 anyhow = "1.0"
 clap = { version = "3.1", features = ["derive", "suggestions", "color"] }
 colored = { version = "2.0" }
-either = { version = "1.6" }
 
 
 # Dependencies used for tests, examples, and benches.
 [dev-dependencies]
 pretty_assertions = "*"
-test-log = { version = "0.2", default_features = false, features = ["trace"] }
-tracing = { version = "0.1", default-features = false }
-tracing-subscriber = { version = "0.3", default_features = false, features = ["env-filter", "fmt"] }
-colored = { version = "2.0" }
 
 [badges]
 maintenance = { status = "experimental" }
