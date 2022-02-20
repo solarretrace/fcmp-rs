@@ -1,6 +1,6 @@
 [package]
 name = "fcmp"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Skylor R Schermer <skyschermer@gmail.com>"]
 edition = "2021"
 license = "MIT or Apache-2.0"
@@ -27,6 +27,7 @@ default = []
 anyhow = "1.0"
 clap = { version = "3.1", features = ["derive", "suggestions", "color"] }
 colored = { version = "2.0" }
+either = { version = "1.6" }
 
 
 # Dependencies used for tests, examples, and benches.

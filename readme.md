@@ -22,7 +22,7 @@ OPTIONS:
             Print help information
 
     -i, --index
-            Return the index of the file, instead of the path
+            Return the (0-based) index of the file instead of the path
 
     -m, --missing <MISSING>
             Behavior when comparing missing files

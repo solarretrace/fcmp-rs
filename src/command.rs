@@ -38,7 +38,7 @@ pub struct FcmpOptions {
         long = "reverse")]
     pub reverse: bool,
 
-    /// Return the index of the file, instead of the path.
+    /// Return the (0-based) index of the file instead of the path.
     #[clap(
         short = 'i',
         long = "index")]

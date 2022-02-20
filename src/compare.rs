@@ -37,10 +37,7 @@ impl TryFrom<&Path> for FileCmp {
             Ok(file) => FileCmp::try_from(file),
 
             Err(e) => match e.kind() {
-                ErrorKind::NotFound => Ok(FileCmp {
-                    file: None,
-                    metadata: None,
-                }),
+                ErrorKind::NotFound => Ok(FileCmp::not_found()),
                 _ => Err(e),
             },
         }
@@ -58,6 +55,19 @@ impl TryFrom<File> for FileCmp {
 }
 
 impl FileCmp {
+    /// Returns a file comparer which behaves like a non-existent file.
+    pub fn not_found() -> Self {
+        FileCmp {
+            file: None,
+            metadata: None,
+        }
+    }
+
+    /// Returns `true` if the file has been found.
+    pub fn is_found(&self) -> bool {
+        self.file.is_some()
+    }
+
     fn modified(&self) -> Option<SystemTime> {
         self.metadata
             .as_ref()
@@ -73,7 +83,8 @@ impl FileCmp {
 
             let len = meta_a.len();
             if len == meta_b.len()
-                && meta_a.is_dir() == meta_b.is_dir()
+                && (!meta_a.is_symlink()
+                    && meta_a.file_type() == meta_b.file_type())
                 && FileCmp::content_eq(file_a, file_b, len).ok()?
             {
                 return Some(Ordering::Equal);
