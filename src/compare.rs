@@ -11,7 +11,10 @@
 // Standard library imports.
 use std::cmp::Ordering;
 use std::fs::File;
+use std::io::Error;
 use std::io::ErrorKind;
+use std::io::BufReader;
+use std::io::BufRead as _;
 use std::path::Path;
 use std::time::SystemTime;
 use std::fs::Metadata;
@@ -62,16 +65,49 @@ impl FileCmp {
     }
 
     pub fn partial_cmp_diff(&self, other: &Self) -> Option<Ordering> {
-        match (&self.file, &other.file) {
-            (Some(fa), Some(fb)) => self.partial_cmp_diff_files(fa, fb),
-            _ => self.partial_cmp(other),
+        if let (Some(file_a), Some(file_b))
+            = (self.file.as_ref(), other.file.as_ref())
+        {
+            let meta_a = self.metadata.as_ref().expect("get file metadata");
+            let meta_b = other.metadata.as_ref().expect("get file metadata");
+
+            let len = meta_a.len();
+            if len == meta_b.len()
+                && meta_a.is_dir() == meta_b.is_dir()
+                && FileCmp::content_eq(file_a, file_b, len).ok()?
+            {
+                return Some(Ordering::Equal);
+            }
         }
+
+        self.partial_cmp(other)
     }
 
-    pub fn partial_cmp_diff_files(&self, fa: &File, fb: &File)
-        -> Option<Ordering>
-    {
-        None
+    fn content_eq(a: &File, b: &File, len: u64) -> Result<bool, Error> {
+        let mut buf_reader_a = BufReader::new(a);
+        let mut buf_reader_b = BufReader::new(b);
+
+        loop {
+            let buf_a = buf_reader_a.fill_buf()?;
+            let buf_b = buf_reader_b.fill_buf()?;
+
+            if buf_a.is_empty() && buf_b.is_empty() {
+                return Ok(true);
+            }
+
+            let read_len = if buf_a.len() <= buf_b.len() {
+                buf_a.len()
+            } else {
+                buf_b.len()
+            };
+
+            if &buf_a[0..read_len] != &buf_b[0..read_len] {
+                return Ok(false);
+            }
+
+            buf_reader_a.consume(read_len);
+            buf_reader_b.consume(read_len);
+        }
     }
 }
 

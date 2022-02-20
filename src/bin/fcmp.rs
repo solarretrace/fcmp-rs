@@ -10,9 +10,11 @@
 
 // Internal library imports.
 use fcmp::command::FcmpOptions;
+use fcmp::command::MissingBehavior;
+use fcmp::FileCmp;
 
 // External library imports.
-use anyhow::Context;
+// use anyhow::Context;
 use anyhow::Error;
 use clap::Parser;
 
@@ -38,8 +40,30 @@ pub fn main() {
 pub fn main_facade() -> Result<(), Error> {
     // Parse command line options.
     let opts = FcmpOptions::try_parse()?;
-
     println!("{:?}", opts);
+
+    // Exit early if no paths to compare.
+    if opts.paths.is_empty() { return Ok(()); }
+
+    let mut paths_iter: Box<dyn Iterator<Item=_>> = Box::new(opts.paths.iter());
+    if opts.reverse {
+        paths_iter = Box::new(opts.paths.iter().rev())
+    }
+
+    let mut max_idx = 0;
+    let mut prev = match FileCmp::try_from(paths_iter.next().unwrap().as_path()) {
+        Ok(res) => res,
+        Err(e) => match opts.missing {
+            MissingBehavior::Error   => return Err(e.into()),
+            MissingBehavior::Ignore  => return Err(e.into()),
+        },
+    };
+
+
+    while let Some(path) = paths_iter.next() {
+
+    }
+
     Ok(())
 }
 

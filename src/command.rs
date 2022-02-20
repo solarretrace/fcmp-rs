@@ -20,38 +20,41 @@ use std::error::Error;
 ////////////////////////////////////////////////////////////////////////////////
 // FcmpOptions
 ////////////////////////////////////////////////////////////////////////////////
-/// Command line options. 
+/// Takes a list of file names and returns the most recently modified file.
+/// 
+/// By default, the file name is returned, and missing files are ignored.
 #[derive(Debug, Clone)]
 #[derive(Parser)]
 #[clap(name = "fcmp")]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, version)]
 pub struct FcmpOptions {
     /// File paths to compare.
     #[clap(parse(from_os_str))]
     pub paths: Vec<PathBuf>,
 
-    /// Reverse the compare.
+    /// Return the oldest file instead of the newest.
     #[clap(
         short = 'r',
         long = "reverse")]
     pub reverse: bool,
 
-    /// Return the index of the relevant file, rather than the path.
+    /// Return the index of the file, instead of the path.
     #[clap(
         short = 'i',
         long = "index")]
     pub index: bool,
 
-    /// Consider files with the same content as equal.
+    /// Ignore files that have the same content.
     #[clap(
         short = 'd',
         long = "diff")]
     pub diff: bool,
 
-    /// Ignore missing files.
+    /// Behavior when comparing missing files.
     #[clap(
         short = 'm',
         long = "missing",
+        default_value = "ignore",
         arg_enum)]
     pub missing: MissingBehavior,
 
@@ -64,21 +67,18 @@ pub struct FcmpOptions {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(clap::ArgEnum)]
 pub enum MissingBehavior {
-    Error,
     Ignore,
-    Promote,
+    Error,
 }
 
 impl FromStr for MissingBehavior {
     type Err = MissingBehaviorParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.eq_ignore_ascii_case("error") {
-            Ok(MissingBehavior::Error)
-        } else if s.eq_ignore_ascii_case("ignore") {
+        if s.eq_ignore_ascii_case("ignore") {
             Ok(MissingBehavior::Ignore)
-        } else if s.eq_ignore_ascii_case("promote") {
-            Ok(MissingBehavior::Promote)
+        } else if s.eq_ignore_ascii_case("error") {
+            Ok(MissingBehavior::Error)
         } else {
             Err(MissingBehaviorParseError)
         }
