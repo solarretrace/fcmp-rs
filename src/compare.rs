@@ -171,7 +171,7 @@ impl FileCmp {
                 buf_b.len()
             };
 
-            if &buf_a[0..read_len] != &buf_b[0..read_len] {
+            if buf_a[0..read_len] != buf_b[0..read_len] {
                 return Ok(false);
             }
 
@@ -266,12 +266,10 @@ pub fn compare_all<'p, P>(
 {
     let promote_newest = matches!(missing, MissingFileBehavior::Newest);
 
-    let mut paths_iter = paths.into_iter().enumerate();
-
     let mut max_idx = 0;
     let mut prev_file_cmp: Option<FileCmp> = None;
 
-    while let Some((idx, p)) = paths_iter.next() {
+    for (idx, p) in paths.into_iter().enumerate() {
         let curr = match FileCmp::try_from(p) {
             Ok(file_cmp) if !file_cmp.is_found() => match missing {
                 MissingFileBehavior::Error => return Err(
