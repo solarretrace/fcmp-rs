@@ -24,9 +24,9 @@ default = []
 
 [dependencies]
 # Required dependencies
-anyhow = "1.0"
-clap = { version = "3.1", features = ["derive", "suggestions", "color"] }
-colored = { version = "2.0" }
+anyhow = "1.0.53"
+clap = { version = "3.1.0", features = ["derive", "suggestions", "color"] }
+colored = { version = "2.0.0" }
 
 
 # Dependencies used for tests, examples, and benches.
