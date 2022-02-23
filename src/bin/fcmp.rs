@@ -68,7 +68,6 @@ pub fn main() {
 pub fn main_facade() -> Result<(), Error> {
     // Parse command line options.
     let opts = FcmpOptions::try_parse()?;
-    // println!("{:?}", opts);
 
     // Exit early if no paths to compare.
     if opts.paths.is_empty() { return Ok(()); }

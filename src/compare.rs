@@ -100,6 +100,7 @@ impl FileCmp {
         use Ordering::*;
 
         let file_cmp = match (&self.file, &other.file) {
+            (Some(_), Some(_)) => Equal,
             (None,    Some(_)) => if promote_newest { Greater } else { Less },
             (Some(_), None)    => if promote_newest { Less } else { Greater },
             _                  => return None,
