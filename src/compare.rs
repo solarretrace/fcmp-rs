@@ -234,6 +234,75 @@ impl std::fmt::Display for MissingFileBehaviorParseError {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+// compare
+////////////////////////////////////////////////////////////////////////////////
+/// Returns the ordering of two files based on their modification times. The
+/// order is a partial order, and as such, None will be returned if the file
+/// modification times cannot be determined.
+///
+///
+/// ### Parameters
+/// 
+/// + `diff`: Whether to consider files with equivalent content to be equal.
+/// + `missing`: The [`MissingFileBehavior`] indicating how to handle missing
+/// files.
+/// 
+/// ### Errors
+///
+/// Returns an error if `MissingFileBehavior::Error` is used and a provided
+/// file is missing, or if reading the file results in an unexpected IO error.
+///
+/// [`Path`]: std::path::Path
+/// [`MissingFileBehavior`]: MissingFileBehavior
+pub fn partial_cmp_paths(
+    a: &Path,
+    b: &Path,
+    diff: bool,
+    missing: MissingFileBehavior)
+    -> Result<Option<Ordering>, anyhow::Error>
+{
+    let promote_newest = matches!(missing, MissingFileBehavior::Newest);
+
+    let a = match FileCmp::try_from(a) {
+        Ok(file_cmp) if !file_cmp.is_found() => match missing {
+            MissingFileBehavior::Error => return Err(
+                anyhow!("file '{}' not found", a.display())
+            ),
+
+            MissingFileBehavior::Ignore => None,
+            _ => Some(file_cmp),
+        },
+        Ok(file_cmp) => Some(file_cmp),
+        Err(e) => return Err(e.into()),
+    };
+
+    let b = match FileCmp::try_from(b) {
+        Ok(file_cmp) if !file_cmp.is_found() => match missing {
+            MissingFileBehavior::Error => return Err(
+                anyhow!("file '{}' not found", b.display())
+            ),
+
+            MissingFileBehavior::Ignore => None,
+            _ => Some(file_cmp),
+        },
+        Ok(file_cmp) => Some(file_cmp),
+        Err(e) => return Err(e.into()),
+    };
+
+    let ordering = match (a, b) {
+        (Some(a), Some(b)) => if diff {
+            a.partial_cmp_diff(&b, promote_newest)
+        } else {
+            a.partial_cmp(&b, promote_newest)
+        },
+        (None, None) => Some(Ordering::Equal),
+        (None,    _) => Some(Ordering::Greater),
+        (_,    None) => Some(Ordering::Less),
+    };
+
+    Ok(ordering)
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // compare_all
@@ -246,12 +315,18 @@ impl std::fmt::Display for MissingFileBehaviorParseError {
 ///
 ///
 /// ### Parameters
+/// 
 /// + `reverse`: Whether to reverse to comparison order and return the least
 /// recently modified file.
 /// + `diff`: Whether to consider files with equivalent content to be equal.
 /// + `missing`: The [`MissingFileBehavior`] indicating how to handle missing
 /// files.
-///    
+/// 
+/// ### Errors
+///
+/// Returns an error if `MissingFileBehavior::Error` is used and a provided
+/// file is missing, or if reading the file results in an unexpected IO error.
+///
 /// [`Path`]: std::path::Path
 /// [`MissingFileBehavior`]: MissingFileBehavior
 pub fn compare_all<'p, P>(
@@ -294,7 +369,7 @@ pub fn compare_all<'p, P>(
                     prev_file_cmp = Some(curr);
                     max_idx = idx;
                 }
-            }
+            },
             (None, curr) => {
                 prev_file_cmp = curr;
                 max_idx = idx;
