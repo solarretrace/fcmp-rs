@@ -1,6 +1,6 @@
 [package]
 name = "fcmp"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Skylor R Schermer <skyschermer@gmail.com>"]
 edition = "2021"
 license = "MIT or Apache-2.0"
@@ -31,7 +31,7 @@ colored = { version = "2.0.0" }
 
 # Dependencies used for tests, examples, and benches.
 [dev-dependencies]
-pretty_assertions = "*"
+pretty_assertions = "1.1.0"
 
 [badges]
 maintenance = { status = "experimental" }

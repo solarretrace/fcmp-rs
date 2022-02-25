@@ -44,6 +44,7 @@ use fcmp::command::FcmpOptions;
 
 // External library imports.
 use clap::Parser;
+use clap::ErrorKind;
 use anyhow::Error;
 
 
@@ -56,7 +57,16 @@ pub fn main() {
         // Print errors to stderr and exit with error code.
         colored::control::unset_override();
         eprintln!("{:?}", err);
-        std::process::exit(1);
+        
+        let exit_code = match err.downcast::<clap::Error>()
+            .map(|e| e.kind())
+        {
+            Ok(ErrorKind::DisplayHelp)    |
+            Ok(ErrorKind::DisplayVersion) => 0,
+            _ => 1,
+        };
+
+        std::process::exit(exit_code);
     }
 }
 

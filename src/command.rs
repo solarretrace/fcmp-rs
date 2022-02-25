@@ -28,7 +28,7 @@ use std::path::PathBuf;
 #[derive(Debug, Clone)]
 #[derive(Parser)]
 #[clap(name = "fcmp")]
-#[clap(author, version)]
+#[clap(author, version, about)]
 pub struct FcmpOptions {
     /// File paths to compare.
     #[clap(parse(from_os_str))]
