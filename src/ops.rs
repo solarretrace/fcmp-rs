@@ -9,6 +9,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// External library imports.
+#[cfg(feature = "serde")]
+use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::Deserialize;
+
 // Standard library imports.
 use std::path::Path;
 use std::io::BufRead as _;
@@ -21,6 +27,8 @@ use std::fs::File;
 
 /// A diff operation.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize))]
 pub enum DiffOp {
 	/// No diff will be performed.
 	None,
