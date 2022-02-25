@@ -1,6 +1,6 @@
 [package]
 name = "fcmp"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Skylor R Schermer <skyschermer@gmail.com>"]
 edition = "2021"
 license = "MIT or Apache-2.0"

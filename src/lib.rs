@@ -41,12 +41,13 @@
 
 // Internal modules.
 mod compare;
+mod ops;
 
 // Public modules.
 pub mod command;
-pub mod ops;
 
 // Exports.
 pub use compare::*;
+pub use ops::*;
 
 

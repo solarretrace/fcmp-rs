@@ -41,7 +41,7 @@
 
 // External library imports.
 use fcmp::command::FcmpOptions;
-use fcmp::ops::DiffOp;
+use fcmp::DiffOp;
 
 // External library imports.
 use clap::Parser;
