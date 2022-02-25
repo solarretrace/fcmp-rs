@@ -8,9 +8,8 @@ repository = "https://github.com/solarretrace/fcmp-rs"
 homepage = "https://github.com/solarretrace/fcmp-rs"
 description = "File compare utility"
 readme = "readme.md"
-keywords = ["file", "utility", "cli", "cmp", "diff"]
-categories = []
-documentation = ""
+keywords = ["file", "cmp", "diff"]
+categories = ["command-line-utilities"]
 exclude = [
     "*.sublime-project",
     "*.sublime-workspace"
