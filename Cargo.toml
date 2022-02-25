@@ -1,6 +1,6 @@
 [package]
 name = "fcmp"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Skylor R Schermer <skyschermer@gmail.com>"]
 edition = "2021"
 license = "MIT or Apache-2.0"
@@ -8,7 +8,7 @@ repository = "https://github.com/solarretrace/fcmp-rs"
 homepage = "https://github.com/solarretrace/fcmp-rs"
 description = "File compare utility"
 readme = "readme.md"
-keywords = ["file", "compare", "utility", "cli"]
+keywords = ["file", "compare", "utility", "cli", "cmp", "diff"]
 categories = []
 documentation = ""
 exclude = [

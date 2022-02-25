@@ -44,6 +44,7 @@ mod compare;
 
 // Public modules.
 pub mod command;
+pub mod ops;
 
 // Exports.
 pub use compare::*;

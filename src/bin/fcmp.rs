@@ -41,6 +41,7 @@
 
 // External library imports.
 use fcmp::command::FcmpOptions;
+use fcmp::ops::DiffOp;
 
 // External library imports.
 use clap::Parser;
@@ -82,10 +83,16 @@ pub fn main_facade() -> Result<(), Error> {
     // Exit early if no paths to compare.
     if opts.paths.is_empty() { return Ok(()); }
 
+    let diff_op = if opts.diff {
+        DiffOp::posix_cmp()
+    } else {
+        DiffOp::None
+    };
+
     let idx = fcmp::compare_all(
         opts.paths.iter().map(|p| p.as_path()),
         opts.reverse,
-        opts.diff,
+        &diff_op,
         opts.missing)?;
 
     // Print the result and exit.

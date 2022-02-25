@@ -8,6 +8,9 @@
 //! File compare functions.
 ////////////////////////////////////////////////////////////////////////////////
 
+// Internal library imports.
+use crate::ops::DiffOp;
+
 // External library imports.
 use anyhow::anyhow;
 
@@ -15,10 +18,9 @@ use anyhow::anyhow;
 use std::cmp::Ordering;
 use std::fs::File;
 use std::fs::Metadata;
-use std::io::BufRead as _;
-use std::io::BufReader;
 use std::io::ErrorKind;
 use std::path::Path;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::SystemTime;
 
@@ -32,41 +34,38 @@ use std::time::SystemTime;
 /// [`File`]: std::fs::File
 #[derive(Debug)]
 pub struct FileCmp {
+    path: PathBuf,
     file: Option<File>,
     metadata: Option<Metadata>,
 }
 
-impl TryFrom<&Path> for FileCmp {
+impl TryFrom<PathBuf> for FileCmp {
     type Error = std::io::Error;
-    fn try_from(path: &Path) -> Result<Self, Self::Error> {
+    fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
         match File::options()
             .read(true)
-            .open(path)
+            .open(&path)
         {
-            Ok(file) => FileCmp::try_from(file),
+            Ok(file) => Ok(FileCmp {
+                path,
+                metadata: Some(file.metadata()?),
+                file: Some(file),
+            }),
 
             Err(e) => match e.kind() {
-                ErrorKind::NotFound => Ok(FileCmp::not_found()),
+                ErrorKind::NotFound => Ok(FileCmp::not_found(path)),
                 _ => Err(e),
             },
         }
     }
 }
 
-impl TryFrom<File> for FileCmp {
-    type Error = std::io::Error;
-    fn try_from(file: File) -> Result<Self, Self::Error> {
-        Ok(FileCmp {
-            metadata: Some(file.metadata()?),
-            file: Some(file),
-        })
-    }
-}
 
 impl FileCmp {
     /// Returns a file comparer which behaves like a non-existent file.
-    pub fn not_found() -> Self {
+    pub fn not_found(path: PathBuf) -> Self {
         FileCmp {
+            path,
             file: None,
             metadata: None,
         }
@@ -91,13 +90,27 @@ impl FileCmp {
     /// modification times, if such an ordering exists.
     ///
     /// ### Parameters
+    /// + `other`: The other `FileCmp` to compare to.
+    /// + `diff_op`: The `DiffOp` to compare file differences. If the files do
+    /// not differ, they will compare equal regardless of their modification
+    /// times. 
     /// + `promote_newest`: If true, indicates that missing files should be
     /// considered greater than other files. Otherwise, they are considered less
     /// than other files.
-    pub fn partial_cmp(&self, other: &Self, promote_newest: bool)
+    pub fn partial_cmp(
+        &self,
+        other: &Self,
+        diff_op: &DiffOp,
+        promote_newest: bool)
         -> Option<Ordering>
     {
         use Ordering::*;
+
+        if let Ok(false) = diff_op
+            .diff(self.path.as_path(), other.path.as_path())
+        {
+            return Some(Equal);
+        }
 
         let file_cmp = match (&self.file, &other.file) {
             (Some(_), Some(_)) => Equal,
@@ -113,72 +126,6 @@ impl FileCmp {
         };
 
         Some(file_cmp.then(time_cmp))
-    }
-
-    /// Returns an ordering between the given `FileCmp`s based on their
-    /// modification times, if such an ordering exists. This method will first
-    /// determine if two files' content differs, and if not, they will be
-    /// treated as equal regardless of their modification times.
-    ///
-    /// ### Parameters
-    /// + `promote_newest`: If true, indicates that missing files should be
-    /// considered greater than other files. Otherwise, they are considered less
-    /// than other files.
-    pub fn partial_cmp_diff(&self, other: &Self, promote_newest: bool)
-        -> Option<Ordering>
-    {
-        if let (Some(file_a), Some(file_b))
-            = (self.file.as_ref(), other.file.as_ref())
-        {
-            let meta_a = self.metadata.as_ref().expect("get file metadata");
-            let meta_b = other.metadata.as_ref().expect("get file metadata");
-
-            let len = meta_a.len();
-            if len == meta_b.len()
-                && (!meta_a.is_symlink()
-                    && meta_a.file_type() == meta_b.file_type())
-                && FileCmp::content_eq(file_a, file_b).ok()?
-            {
-                return Some(Ordering::Equal);
-            }
-        }
-
-        self.partial_cmp(other, promote_newest)
-    }
-
-    /// Returns `true` if the given files have the same content.
-    ///
-    /// ### Errors
-    ///
-    /// Returns a [`std::io::Error`] if the file's contents fail to read
-    /// correctly.
-    ///
-    /// [`std::io::Error`]: std::io::Error
-    fn content_eq(a: &File, b: &File) -> Result<bool, std::io::Error> {
-        let mut buf_reader_a = BufReader::new(a);
-        let mut buf_reader_b = BufReader::new(b);
-
-        loop {
-            let buf_a = buf_reader_a.fill_buf()?;
-            let buf_b = buf_reader_b.fill_buf()?;
-
-            if buf_a.is_empty() && buf_b.is_empty() {
-                return Ok(true);
-            }
-
-            let read_len = if buf_a.len() <= buf_b.len() {
-                buf_a.len()
-            } else {
-                buf_b.len()
-            };
-
-            if buf_a[0..read_len] != buf_b[0..read_len] {
-                return Ok(false);
-            }
-
-            buf_reader_a.consume(read_len);
-            buf_reader_b.consume(read_len);
-        }
     }
 }
 
@@ -259,13 +206,16 @@ impl std::fmt::Display for MissingFileBehaviorParseError {
 pub fn partial_cmp_paths(
     a: &Path,
     b: &Path,
-    diff: bool,
+    diff_op: &DiffOp,
     missing: MissingFileBehavior)
     -> Result<Option<Ordering>, anyhow::Error>
 {
     let promote_newest = matches!(missing, MissingFileBehavior::Newest);
 
-    let a = match FileCmp::try_from(a) {
+    // Check if they're the same paths.
+    if a == b { return Ok(Some(Ordering::Equal)); }
+
+    let a = match FileCmp::try_from(a.to_path_buf()) {
         Ok(file_cmp) if !file_cmp.is_found() => match missing {
             MissingFileBehavior::Error => return Err(
                 anyhow!("file '{}' not found", a.display())
@@ -278,7 +228,7 @@ pub fn partial_cmp_paths(
         Err(e) => return Err(e.into()),
     };
 
-    let b = match FileCmp::try_from(b) {
+    let b = match FileCmp::try_from(b.to_path_buf()) {
         Ok(file_cmp) if !file_cmp.is_found() => match missing {
             MissingFileBehavior::Error => return Err(
                 anyhow!("file '{}' not found", b.display())
@@ -292,11 +242,7 @@ pub fn partial_cmp_paths(
     };
 
     let ordering = match (a, b) {
-        (Some(a), Some(b)) => if diff {
-            a.partial_cmp_diff(&b, promote_newest)
-        } else {
-            a.partial_cmp(&b, promote_newest)
-        },
+        (Some(a), Some(b)) => a.partial_cmp(&b, diff_op, promote_newest),
         (None, None) => Some(Ordering::Equal),
         (None,    _) => Some(Ordering::Greater),
         (_,    None) => Some(Ordering::Less),
@@ -333,7 +279,7 @@ pub fn partial_cmp_paths(
 pub fn compare_all<'p, P>(
     paths: P,
     reverse: bool,
-    diff: bool,
+    diff_op: &DiffOp,
     missing: MissingFileBehavior)
     -> Result<usize, anyhow::Error>
     where P: IntoIterator<Item=&'p Path>
@@ -344,7 +290,7 @@ pub fn compare_all<'p, P>(
     let mut prev_file_cmp: Option<FileCmp> = None;
 
     for (idx, p) in paths.into_iter().enumerate() {
-        let curr = match FileCmp::try_from(p) {
+        let curr = match FileCmp::try_from(p.to_path_buf()) {
             Ok(file_cmp) if !file_cmp.is_found() => match missing {
                 MissingFileBehavior::Error => return Err(
                     anyhow!("file '{}' not found", p.display())
@@ -359,11 +305,7 @@ pub fn compare_all<'p, P>(
 
         match (prev_file_cmp.as_ref(), curr) {
             (Some(prev), Some(curr)) => {
-                let cmp = if diff {
-                    prev.partial_cmp_diff(&curr, promote_newest)
-                } else {
-                    prev.partial_cmp(&curr, promote_newest)
-                };
+                let cmp = prev.partial_cmp(&curr, diff_op, promote_newest);
                 if let Some(Ordering::Greater) = cmp
                     .map(|o| if reverse { o } else { o.reverse() })
                 {
