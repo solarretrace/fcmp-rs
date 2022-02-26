@@ -56,7 +56,7 @@
 #![warn(while_true)]
 
 // Clippy groups.
-// #![warn(clippy::cargo)]
+#![warn(clippy::cargo)]
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
 
@@ -72,7 +72,7 @@
 #![warn(clippy::lossy_float_literal)]
 #![warn(clippy::map_err_ignore)]
 #![warn(clippy::mem_forget)]
-// #![warn(clippy::missing_docs_in_private_items)]
+#![warn(clippy::missing_docs_in_private_items)]
 #![warn(clippy::missing_enforced_import_renames)]
 #![warn(clippy::mod_module_files)]
 #![warn(clippy::multiple_inherent_impl)]
@@ -84,7 +84,7 @@
 #![warn(clippy::unneeded_field_pattern)]
 #![warn(clippy::verbose_file_reads)]
 
-// Non-improvemet lints.
+// Non-improvement lints.
 #![allow(clippy::cast_precision_loss)]
 #![allow(clippy::default_trait_access)]
 #![allow(clippy::enum_glob_use)]

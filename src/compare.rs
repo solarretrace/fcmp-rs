@@ -34,8 +34,11 @@ use std::time::SystemTime;
 /// [`File`]: std::fs::File
 #[derive(Debug)]
 pub struct FileCmp {
+    /// The path of the file.
     path: PathBuf,
+    /// The opened file, if it has been found.
     file: Option<File>,
+    /// The file's metadata, if available.
     metadata: Option<Metadata>,
 }
 
