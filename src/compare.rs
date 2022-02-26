@@ -46,14 +46,14 @@ impl TryFrom<PathBuf> for FileCmp {
             .read(true)
             .open(&path)
         {
-            Ok(file) => Ok(FileCmp {
+            Ok(file) => Ok(Self {
                 path,
                 metadata: Some(file.metadata()?),
                 file: Some(file),
             }),
 
             Err(e) => match e.kind() {
-                ErrorKind::NotFound => Ok(FileCmp::not_found(path)),
+                ErrorKind::NotFound => Ok(Self::not_found(path)),
                 _ => Err(e),
             },
         }
@@ -63,8 +63,9 @@ impl TryFrom<PathBuf> for FileCmp {
 
 impl FileCmp {
     /// Returns a file comparer which behaves like a non-existent file.
+    #[must_use]
     pub fn not_found(path: PathBuf) -> Self {
-        FileCmp {
+        Self {
             path,
             file: None,
             metadata: None,
@@ -72,6 +73,7 @@ impl FileCmp {
     }
 
     /// Returns `true` if the file has been found.
+    #[must_use]
     pub fn is_found(&self) -> bool {
         self.file.is_some()
     }
@@ -80,6 +82,7 @@ impl FileCmp {
     /// determined. This is equivalent to a call to [`Metadata::modified`].
     ///
     /// [`Metadata::modified`]: std::fs::Metadata::modified
+    #[must_use]
     fn modified(&self) -> Option<SystemTime> {
         self.metadata
             .as_ref()
@@ -97,6 +100,7 @@ impl FileCmp {
     /// + `promote_newest`: If true, indicates that missing files should be
     /// considered greater than other files. Otherwise, they are considered less
     /// than other files.
+    #[must_use]
     pub fn partial_cmp(
         &self,
         other: &Self,
@@ -154,13 +158,13 @@ impl FromStr for MissingFileBehavior {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.eq_ignore_ascii_case("oldest") {
-            Ok(MissingFileBehavior::Oldest)
+            Ok(Self::Oldest)
         } else if s.eq_ignore_ascii_case("newest") {
-            Ok(MissingFileBehavior::Newest)
+            Ok(Self::Newest)
         } else if s.eq_ignore_ascii_case("ignore") {
-            Ok(MissingFileBehavior::Ignore)
+            Ok(Self::Ignore)
         } else if s.eq_ignore_ascii_case("error") {
-            Ok(MissingFileBehavior::Error)
+            Ok(Self::Error)
         } else {
             Err(MissingFileBehaviorParseError)
         }
@@ -305,10 +309,9 @@ pub fn compare_all<'p, P>(
 
         match (prev_file_cmp.as_ref(), curr) {
             (Some(prev), Some(curr)) => {
-                let cmp = prev.partial_cmp(&curr, diff_op, promote_newest);
-                if let Some(Ordering::Greater) = cmp
-                    .map(|o| if reverse { o } else { o.reverse() })
-                {
+                let cmp = prev.partial_cmp(&curr, diff_op, promote_newest)
+                    .map(|o| if reverse { o } else { o.reverse() });
+                if cmp == Some(Ordering::Greater) {
                     prev_file_cmp = Some(curr);
                     max_idx = idx;
                 }

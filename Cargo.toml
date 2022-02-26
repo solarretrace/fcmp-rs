@@ -1,6 +1,6 @@
 [package]
 name = "fcmp"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Skylor R Schermer <skyschermer@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -25,7 +25,6 @@ default = []
 # Required dependencies
 anyhow = "1.0.53"
 clap = { version = "3.1.0", features = ["derive", "suggestions", "color"] }
-colored = { version = "2.0.0" }
 # Optional dependencies
 serde = { version = "1.0.136", optional = true, features = ["derive"] }
 

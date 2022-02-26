@@ -48,16 +48,18 @@ pub enum DiffOp {
 
 impl DiffOp {
 	/// Returns a `DiffOp` that will execute a POSIX diff subprocess.
-	pub fn posix_diff() -> DiffOp {
-		DiffOp::Subprocess {
+	#[must_use]
+	pub fn posix_diff() -> Self {
+		Self::Subprocess {
 			command: "diff",
 			args: vec![],
 		}
 	}
 
 	/// Returns a `DiffOp` that will execute a POSIX cmp subprocess.
-	pub fn posix_cmp() -> DiffOp {
-		DiffOp::Subprocess {
+	#[must_use]
+	pub fn posix_cmp() -> Self {
+		Self::Subprocess {
 			command: "cmp",
 			args: vec!["-s"],
 		}
@@ -67,9 +69,9 @@ impl DiffOp {
 	/// Returns true if the files at the given paths are different.
 	pub fn diff(&self, a: &Path, b: &Path) -> Result<bool, std::io::Error> {
 		match self {
-			DiffOp::None => Ok(a != b),
+			Self::None => Ok(a != b),
 
-			DiffOp::Internal => {
+			Self::Internal => {
 				let file_a = match File::options().read(true).open(a) {
 					Ok(f)  => Some(f),
 					Err(e) if matches!(e.kind(), ErrorKind::NotFound) => None,
@@ -94,7 +96,7 @@ impl DiffOp {
 						{
 							 Ok(false)
 						} else {
-							DiffOp::internal_eq(&a, &b)
+							Self::internal_eq(&a, &b)
 								.map(bool::not)
 						}
 					},
@@ -104,7 +106,7 @@ impl DiffOp {
 				}
 			},
 
-			DiffOp::Subprocess { command, args } => {
+			Self::Subprocess { command, args } => {
 				let status = Command::new(command)
 					.args(args)
 					.arg(a)
