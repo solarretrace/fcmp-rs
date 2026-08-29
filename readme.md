@@ -13,9 +13,9 @@ returned.
 
 There are currently two install options: 
 
-1. [Install cargo](https://crates.io/) and run `cargo install stall`.
+1. [Install cargo](https://crates.io/) and run `cargo install fcmp`.
 
-2. Build `stall` from source. Clone this repository, install Rust, run `Cargo build --release`, and move the compiled binary into your `$PATH` somewhere.
+2. Build `fcmp` from source. Clone this repository, install Rust, run `Cargo build --release`, and move the compiled binary into your `$PATH` somewhere.
 
 # Usage
 
@@ -55,5 +55,4 @@ OPTIONS:
 
 # License
 
-Stall is licenced with the [MIT license](/license-mit.md) or the [Apache version 2.0 license](/license-apache.md), at your option.
-
+fcmp is licenced with the [MIT license](/license-mit.md) or the [Apache version 2.0 license](/license-apache.md), at your option.
